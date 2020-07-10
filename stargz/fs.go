@@ -136,12 +136,18 @@ func NewFilesystem(ctx context.Context, root string, config *Config) (_ snbase.F
 	if config.FSCacheType == memoryCacheType {
 		fsCache = cache.NewMemoryCache()
 	} else {
+		cacheDir := filepath.Join(root, "fscache")
+		fmt.Println("Using directory cache at " + cacheDir + "(config.FSCacheType=\"" + config.FSCacheType + "\")") // ANDBRO
 		if fsCache, err = cache.NewDirectoryCache(
-			filepath.Join(root, "fscache"),
+			cacheDir,
 			config.DirectoryCacheConfig,
 		); err != nil {
 			return nil, errors.Wrap(err, "failed to prepare filesystem cache")
 		}
+		fmt.Println("Cache config => " +
+			"MaxLRUCacheEntry=" + strconv.Itoa(config.DirectoryCacheConfig.MaxLRUCacheEntry) +
+			", MaxCacheFds=" + strconv.Itoa(config.DirectoryCacheConfig.MaxCacheFds) +
+			", SyncAdd=" + strconv.FormatBool(config.DirectoryCacheConfig.SyncAdd)) // ANDBRO
 	}
 	keychain := authn.NewMultiKeychain(
 		authn.DefaultKeychain,

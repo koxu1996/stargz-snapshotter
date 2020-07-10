@@ -80,7 +80,13 @@ func main() {
 	if err != nil {
 		log.G(ctx).WithError(err).Fatalf("failed to configure filesystem")
 	}
-	rs, err := snbase.NewSnapshotter(ctx, filepath.Join(*rootDir, "snapshotter"), fs, snbase.AsynchronousRemove)
+	// ANDBRO: here is filesystem for mountpoints (?)
+	//snapshotterPath := filepath.Join(*rootDir, "snapshotter")
+	randomID := guuid.New().String()
+	log.G(ctx).Info("[ANDBRO] Random ID for mountpoints: snapshotter" + randomID)
+
+	snapshotterPath := filepath.Join(*rootDir, "snapshotter"+randomID) // custom one to test sharing
+	rs, err := snbase.NewSnapshotter(ctx, snapshotterPath, fs, snbase.AsynchronousRemove)
 	if err != nil {
 		log.G(ctx).WithError(err).Fatalf("failed to configure snapshotter")
 	}
