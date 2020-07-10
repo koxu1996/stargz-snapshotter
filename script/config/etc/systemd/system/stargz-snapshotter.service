@@ -5,9 +5,9 @@ Before=containerd.service
 
 [Service]
 Environment=HOME=/root
-ExecStart=/usr/local/bin/containerd-stargz-grpc --log-level=debug --config=/etc/containerd-stargz-grpc/config.toml
+ExecStart=/usr/local/bin/dlv --listen=0.0.0.0:30200 --headless=true --api-version=2 --accept-multiclient --log-dest /tmp/dlv.log exec /usr/local/bin/containerd-stargz-grpc -- --log-level=debug --config=/etc/containerd-stargz-grpc/config.toml
 Restart=always
-RestartSec=1
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

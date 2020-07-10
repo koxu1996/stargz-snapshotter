@@ -44,6 +44,10 @@ RUN cd $GOPATH/src/github.com/containerd/stargz-snapshotter && \
     PREFIX=/out/ GO_BUILD_FLAGS=${SNAPSHOTTER_BUILD_FLAGS} make containerd-stargz-grpc && \
     PREFIX=/out/ GO_BUILD_FLAGS=${CTR_REMOTE_BUILD_FLAGS} make ctr-remote
 
+# Add dlv for debugging
+FROM golang-base AS dlv-dev
+RUN go get github.com/derekparker/delve/cmd/dlv
+
 # Base image which contains containerd with default snapshotter
 # `docker-ce-cli` is used only for users to `docker login` to registries (e.g. DockerHub)
 # with configuring ~/.docker/config.json
@@ -76,6 +80,8 @@ ENTRYPOINT [ "/entrypoint.sh" ]
 FROM kindest/node:v1.18.0
 COPY --from=containerd-dev /out/bin/containerd /out/bin/containerd-shim-runc-v2 /usr/local/bin/
 COPY --from=snapshotter-dev /out/* /usr/local/bin/
+COPY . /stargz-source
+COPY --from=dlv-dev /go/bin/dlv /usr/local/bin/dlv
 COPY ./script/config/ /
 RUN apt-get update -y && apt-get install --no-install-recommends -y fuse && \
     systemctl enable stargz-snapshotter
