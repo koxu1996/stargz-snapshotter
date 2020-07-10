@@ -98,6 +98,8 @@ func (b *blob) FetchedSize() int64 {
 }
 
 func (b *blob) Cache(offset int64, size int64, opts ...Option) error {
+
+	// ANDBRO this is interesting
 	var cacheOpts options
 	for _, o := range opts {
 		o(&cacheOpts)

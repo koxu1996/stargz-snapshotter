@@ -52,6 +52,7 @@ type VerifiableReader func(verify.TOCEntryVerifier) Reader
 // It returns VerifiableReader so the caller must provide a verify.TOCEntryVerifier
 // to use for verifying file or chunk contained in this stargz blob.
 func NewReader(sr *io.SectionReader, cache cache.BlobCache) (VerifiableReader, *stargz.TOCEntry, error) {
+	fmt.Println("NewReader()")
 	r, err := stargz.Open(sr)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to parse stargz")
@@ -204,6 +205,9 @@ type file struct {
 // ReadAt reads chunks from the stargz file with trying to fetch as many chunks
 // as possible from the cache.
 func (sf *file) ReadAt(p []byte, offset int64) (int, error) {
+
+	fmt.Println("ReadAt start")
+
 	nr := 0
 	for nr < len(p) {
 		ce, ok := sf.r.ChunkEntryForOffset(sf.name, offset+int64(nr))

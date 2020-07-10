@@ -65,6 +65,8 @@ func main() {
 		config = &stargz.Config{}
 	)
 
+	log.G(ctx).Info("ANDBRO: Starting")
+
 	// Get configuration from specified file
 	if *configPath != "" {
 		if _, err := toml.DecodeFile(*configPath, &config); err != nil {
@@ -73,6 +75,7 @@ func main() {
 	}
 
 	// Configure filesystem and snapshotter
+	// ANDBRO: here is filesystem for layers (?)
 	fs, err := stargz.NewFilesystem(ctx, filepath.Join(*rootDir, "stargz"), config)
 	if err != nil {
 		log.G(ctx).WithError(err).Fatalf("failed to configure filesystem")

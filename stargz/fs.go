@@ -189,6 +189,7 @@ type filesystem struct {
 }
 
 func (fs *filesystem) Mount(ctx context.Context, mountpoint string, labels map[string]string) error {
+	fmt.Println("fs.Mount") // ANDBRO
 	// This is a prioritized task and all background tasks will be stopped
 	// execution so this can avoid being disturbed for NW traffic by background
 	// tasks.
@@ -203,6 +204,7 @@ func (fs *filesystem) Mount(ctx context.Context, mountpoint string, labels map[s
 		return err
 	}
 	logCtx = logCtx.WithField("ref", ref).WithField("digest", ldgst)
+	log.G(ctx).Debug("[ANDBRO] Layers:", layers, " Ref:", ref, " LDigest:", ldgst)
 
 	// Resolve the target layer and the all chained layers
 	var (
@@ -389,7 +391,12 @@ func (fs *filesystem) resolve(ctx context.Context, ref, digest string) *resolveR
 			defer fs.backgroundTaskManager.DonePrioritizedTask()
 			return blob.ReadAt(p, offset)
 		}), 0, blob.Size())
+<<<<<<< HEAD
 		vr, root, err := reader.NewReader(sr, fs.fsCache)
+=======
+		fmt.Println("fs.resolve(ctx, ref=\"" + ref + "\", digest=\"" + digest + "\")") // ANDBRO
+		gr, root, err := reader.NewReader(sr, fs.fsCache)
+>>>>>>> 70670be... 03. Add logs and comments
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read layer")
 		}

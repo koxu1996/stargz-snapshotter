@@ -96,6 +96,11 @@ type snapshotter struct {
 // diffs are stored under the provided root and a metadata file is stored under
 // the root as same as overlayfs snapshotter.
 func NewSnapshotter(ctx context.Context, root string, targetFs FileSystem, opts ...Opt) (snapshots.Snapshotter, error) {
+
+	// ANDBRO (2020-07-03):
+	// root = /var/lib/containerd-stargz-grpc/snapshotter -> mountpoints here
+	// targetFs = fs("/var/lib/containerd-stargz-grpc/stargz") -> cached layers here
+
 	if targetFs == nil {
 		return nil, fmt.Errorf("Specify filesystem to use")
 	}
@@ -122,6 +127,7 @@ func NewSnapshotter(ctx context.Context, root string, targetFs FileSystem, opts 
 		return nil, err
 	}
 
+	// ANDBRO: making snapshots folder here
 	if err := os.Mkdir(filepath.Join(root, "snapshots"), 0700); err != nil && !os.IsExist(err) {
 		return nil, err
 	}
@@ -141,6 +147,7 @@ func NewSnapshotter(ctx context.Context, root string, targetFs FileSystem, opts 
 // Should be used for parent resolution, existence checks and to discern
 // the kind of snapshot.
 func (o *snapshotter) Stat(ctx context.Context, key string) (snapshots.Info, error) {
+	log.G(ctx).Debug("[ANDBRO] Stat(key: " + key + ")")
 	ctx, t, err := o.ms.TransactionContext(ctx, false)
 	if err != nil {
 		return snapshots.Info{}, err
@@ -155,6 +162,7 @@ func (o *snapshotter) Stat(ctx context.Context, key string) (snapshots.Info, err
 }
 
 func (o *snapshotter) Update(ctx context.Context, info snapshots.Info, fieldpaths ...string) (snapshots.Info, error) {
+	log.G(ctx).Debug("[ANDBRO] Update(info: " + info.Name + ", " + info.Parent + ")")
 	ctx, t, err := o.ms.TransactionContext(ctx, true)
 	if err != nil {
 		return snapshots.Info{}, err
@@ -182,6 +190,7 @@ func (o *snapshotter) Update(ctx context.Context, info snapshots.Info, fieldpath
 //
 // For committed snapshots, the value is returned from the metadata database.
 func (o *snapshotter) Usage(ctx context.Context, key string) (snapshots.Usage, error) {
+	log.G(ctx).Debug("[ANDBRO] Usage(key: " + key + ")")
 	ctx, t, err := o.ms.TransactionContext(ctx, false)
 	if err != nil {
 		return snapshots.Usage{}, err
@@ -209,6 +218,7 @@ func (o *snapshotter) Usage(ctx context.Context, key string) (snapshots.Usage, e
 }
 
 func (o *snapshotter) Prepare(ctx context.Context, key, parent string, opts ...snapshots.Opt) ([]mount.Mount, error) {
+	log.G(ctx).Debug("[ANDBRO] Prepare(key: " + key + ", parent: " + parent + ")")
 	s, err := o.createSnapshot(ctx, snapshots.KindActive, key, parent, opts)
 	if err != nil {
 		return nil, err
@@ -228,6 +238,7 @@ func (o *snapshotter) Prepare(ctx context.Context, key, parent string, opts ...s
 			return nil, err
 		}
 	}
+	log.G(ctx).Debug("[ANDBRO] Preparing remote snapshot...")
 	if target, ok := base.Labels[targetSnapshotLabel]; ok {
 		if err := o.prepareRemoteSnapshot(ctx, key, base.Labels); err == nil {
 			base.Labels[remoteLabel] = fmt.Sprintf("remote snapshot") // Mark this snapshot as remote
@@ -240,12 +251,17 @@ func (o *snapshotter) Prepare(ctx context.Context, key, parent string, opts ...s
 		} else {
 			logCtx.WithError(err).WithField(remoteSnapshotLogKey, "false").Debug("failed to prepare remote snapshot")
 		}
+	} else {
+		log.G(ctx).Debug("[ANDBRO] Strange thing occured!!!!!!!!")
+		fmt.Printf("targetSnapshotLabel = \"" + targetSnapshotLabel + "\"\n")
+		fmt.Println("map:", base.Labels)
 	}
 
 	return o.mounts(ctx, s, parent)
 }
 
 func (o *snapshotter) View(ctx context.Context, key, parent string, opts ...snapshots.Opt) ([]mount.Mount, error) {
+	log.G(ctx).Debug("[ANDBRO] View(key: " + key + ", parent: " + parent + ")")
 	s, err := o.createSnapshot(ctx, snapshots.KindView, key, parent, opts)
 	if err != nil {
 		return nil, err
@@ -258,6 +274,7 @@ func (o *snapshotter) View(ctx context.Context, key, parent string, opts ...snap
 //
 // This can be used to recover mounts after calling View or Prepare.
 func (o *snapshotter) Mounts(ctx context.Context, key string) ([]mount.Mount, error) {
+	log.G(ctx).Debug("[ANDBRO] Mounts(key: " + key + ")")
 	ctx, t, err := o.ms.TransactionContext(ctx, false)
 	if err != nil {
 		return nil, err
@@ -271,6 +288,7 @@ func (o *snapshotter) Mounts(ctx context.Context, key string) ([]mount.Mount, er
 }
 
 func (o *snapshotter) Commit(ctx context.Context, name, key string, opts ...snapshots.Opt) error {
+	log.G(ctx).Debug("[ANDBRO] Commit(key: " + key + ")")
 	ctx, t, err := o.ms.TransactionContext(ctx, true)
 	if err != nil {
 		return err
@@ -306,6 +324,7 @@ func (o *snapshotter) Commit(ctx context.Context, name, key string, opts ...snap
 // immediately become unavailable and unrecoverable. Disk space will
 // be freed up on the next call to `Cleanup`.
 func (o *snapshotter) Remove(ctx context.Context, key string) (err error) {
+	log.G(ctx).Debug("[ANDBRO] Remove(key: " + key + ")")
 	ctx, t, err := o.ms.TransactionContext(ctx, true)
 	if err != nil {
 		return err
@@ -351,6 +370,7 @@ func (o *snapshotter) Remove(ctx context.Context, key string) (err error) {
 
 // Walk the snapshots.
 func (o *snapshotter) Walk(ctx context.Context, fn snapshots.WalkFunc, fs ...string) error {
+	log.G(ctx).Debug("[ANDBRO] Walk(fs: " + strings.Join(fs, " ") + ")")
 	ctx, t, err := o.ms.TransactionContext(ctx, false)
 	if err != nil {
 		return err
@@ -361,6 +381,7 @@ func (o *snapshotter) Walk(ctx context.Context, fn snapshots.WalkFunc, fs ...str
 
 // Cleanup cleans up disk resources from removed or abandoned snapshots
 func (o *snapshotter) Cleanup(ctx context.Context) error {
+	log.G(ctx).Debug("[ANDBRO] Cleanup()")
 	const cleanupCommitted = false
 	return o.cleanup(ctx, cleanupCommitted)
 }
@@ -501,7 +522,9 @@ func (o *snapshotter) createSnapshot(ctx context.Context, kind snapshots.Kind, k
 		}
 	}
 
+	// ANDBRO: here we prepared folder for (?)
 	path = filepath.Join(snapshotDir, s.ID)
+	log.G(ctx).Info("[ANDBRO] Renaming tmpdir to " + path)
 	if err = os.Rename(td, path); err != nil {
 		return storage.Snapshot{}, errors.Wrap(err, "failed to rename")
 	}
@@ -535,6 +558,7 @@ func (o *snapshotter) prepareDirectory(ctx context.Context, snapshotDir string, 
 }
 
 func (o *snapshotter) mounts(ctx context.Context, s storage.Snapshot, checkKey string) ([]mount.Mount, error) {
+	log.G(o.context).Debug("	[ANDBRO] mounts(checkKey: " + checkKey + ")")
 	// Make sure that all layers lower than the target layer are available
 	if checkKey != "" && !o.checkAvailability(ctx, checkKey) {
 		return nil, errors.Wrapf(errdefs.ErrUnavailable, "layer %q unavailable", s.ID)
@@ -548,6 +572,7 @@ func (o *snapshotter) mounts(ctx context.Context, s storage.Snapshot, checkKey s
 			roFlag = "ro"
 		}
 
+		log.G(o.context).Debug("	* " + o.upperPath(s.ID))
 		return []mount.Mount{
 			{
 				Source: o.upperPath(s.ID),
@@ -567,6 +592,7 @@ func (o *snapshotter) mounts(ctx context.Context, s storage.Snapshot, checkKey s
 			fmt.Sprintf("upperdir=%s", o.upperPath(s.ID)),
 		)
 	} else if len(s.ParentIDs) == 1 {
+		log.G(o.context).Debug("	* " + o.upperPath(s.ParentIDs[0]))
 		return []mount.Mount{
 			{
 				Source: o.upperPath(s.ParentIDs[0]),
@@ -585,6 +611,7 @@ func (o *snapshotter) mounts(ctx context.Context, s storage.Snapshot, checkKey s
 	}
 
 	options = append(options, fmt.Sprintf("lowerdir=%s", strings.Join(parentPaths, ":")))
+	log.G(o.context).Debug("	* overlay")
 	return []mount.Mount{
 		{
 			Type:    "overlay",
@@ -605,6 +632,7 @@ func (o *snapshotter) workPath(id string) string {
 
 // Close closes the snapshotter
 func (o *snapshotter) Close() error {
+	log.G(o.context).Debug("ANDBRO: Stat")
 	// unmount all mounts including Committed
 	const cleanupCommitted = true
 	ctx := context.Background()
@@ -627,6 +655,7 @@ func (o *snapshotter) prepareRemoteSnapshot(ctx context.Context, key string, lab
 		return err
 	}
 
+	log.G(ctx).WithError(err).Debug("[ANDBRO] fs.Mount for key=" + key + " (id=" + id + ")")
 	if err := o.fs.Mount(o.context, o.upperPath(id), labels); err != nil {
 		return err
 	}
@@ -643,6 +672,7 @@ func (o *snapshotter) checkAvailability(ctx context.Context, key string) bool {
 	ctx, t, err := o.ms.TransactionContext(ctx, false)
 	if err != nil {
 		logCtx.WithError(err).Warn("failed to get transaction")
+		logCtx.Debug("no layer available due to above error")
 		return false
 	}
 	defer t.Rollback()
@@ -652,6 +682,7 @@ func (o *snapshotter) checkAvailability(ctx context.Context, key string) bool {
 		id, info, _, err := storage.GetInfo(ctx, cKey)
 		if err != nil {
 			logCtx.WithError(err).Warnf("failed to get info of %q", cKey)
+			logCtx.Debug("no layer available due to above error")
 			return false
 		}
 		if _, ok := info.Labels[remoteLabel]; ok {
@@ -666,9 +697,11 @@ func (o *snapshotter) checkAvailability(ctx context.Context, key string) bool {
 		logCtx.WithField("mount-point", mp).Debug("checking mount point")
 		if err := o.fs.Check(o.context, mp); err != nil {
 			logCtx.WithError(err).WithField("mount-point", mp).Warn("layer is unavailable")
+			logCtx.Debug("no layer available due to non-existing mountpoint")
 			return false
 		}
 	}
 
+	logCtx.Debug("layer exists")
 	return true
 }
