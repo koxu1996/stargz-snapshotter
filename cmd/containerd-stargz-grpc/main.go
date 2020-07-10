@@ -24,6 +24,7 @@ import (
 	"os/signal"
 	"path/filepath"
 
+	guuid "github.com/google/uuid"
 	"google.golang.org/grpc"
 
 	"github.com/BurntSushi/toml"

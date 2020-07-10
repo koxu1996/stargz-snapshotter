@@ -54,7 +54,7 @@ function cleanup {
     if [ -f "${REMOTE_SNAPSHOTTER_SOCKET}" ] ; then
         rm "${REMOTE_SNAPSHOTTER_SOCKET}"
     fi
-    if [ -d "${REMOTE_SNAPSHOTTER_ROOT}snapshotter/snapshots/" ] ; then 
+    if [ -d "${REMOTE_SNAPSHOTTER_ROOT}snapshotter/snapshots/" ] ; then
         find "${REMOTE_SNAPSHOTTER_ROOT}snapshotter/snapshots/" \
              -maxdepth 1 -mindepth 1 -type d -exec umount "{}/fs" \;
     fi

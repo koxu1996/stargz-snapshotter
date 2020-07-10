@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
-	github.com/containerd/cgroups v0.0.0-20200327175542-b44481373989 // indirect
+	github.com/containerd/cgroups v0.0.0-20200625214700-544d8ea40afe // indirect
 	github.com/containerd/console v1.0.0 // indirect
 	github.com/containerd/containerd v1.4.0-beta.1
 	github.com/containerd/continuity v0.0.0-20190815185530-f2a389ac0a02
@@ -20,12 +20,13 @@ require (
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9
 	github.com/google/crfs v0.0.0-20191108021818-71d77da419c9
 	github.com/google/go-containerregistry v0.0.0-20200425101607-48f605c3b60a
+	github.com/google/uuid v1.1.1
 	github.com/hanwen/go-fuse/v2 v2.0.3
 	github.com/imdario/mergo v0.3.9 // indirect
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/opencontainers/runc v1.0.0-rc9
-	github.com/opencontainers/runtime-spec v1.0.2-0.20190207185410-29686dbc5559
+	github.com/opencontainers/runtime-spec v1.0.2
 	github.com/opencontainers/selinux v1.5.1 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/rs/xid v1.2.1
