@@ -273,7 +273,9 @@ func (fs *filesystem) Mount(ctx context.Context, mountpoint string, labels map[s
 			return errors.Wrapf(err, "invalid stargz layer")
 		}
 		log.G(ctx).Debugf("verified")
-	} else if _, ok := labels[TargetSkipVerifyLabel]; ok && fs.allowNoVerification {
+		//} else if _, ok := labels[TargetSkipVerifyLabel]; ok && fs.allowNoVerification {
+		// Temporary until get answer to https://github.com/containerd/stargz-snapshotter/issues/129#issuecomment-696873227
+	} else if fs.allowNoVerification {
 		// If unverified layer is allowed, use it with warning.
 		// This mode is for legacy stargz archives which don't contain digests
 		// necessary for layer verification.
